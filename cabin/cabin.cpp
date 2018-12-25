@@ -97,24 +97,42 @@ int main()
 	glDeleteShader(vertexShader);   //链接后顶点着色器源码可以删了
 	glDeleteShader(fragmentShader); //链接后片元着色器源码可以删了
 
-	float vertices[] = {  //三角形
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
+	float vertices[] = {
+	   0.5f,  0.5f, 0.0f,  // top right
+	   0.5f, -0.5f, 0.0f,  // bottom right
+	  -0.5f, -0.5f, 0.0f,  // bottom left
+	  -0.5f,  0.5f, 0.0f   // top left 
+	};
+	unsigned int indices[] = {  // note that we start from 0!
+		0, 1, 3,  // first Triangle
+		1, 2, 3   // second Triangle
 	};
 
-	unsigned int VAO;  //顶点缓存对象和顶点数组对象的ID
-	glGenVertexArrays(1, &VAO);  //申请一个顶点数组对象
+	unsigned int VBO, VAO, EBO; 
+	glGenVertexArrays(1, &VAO);  //生成一个以VAO的地址为起点的顶点数组对象
+	glGenBuffers(1, &VBO);       //生成一个以VBO的地址为起点的顶点缓存对象
+	glGenBuffers(1, &EBO);       //生成一个以EBO的地址为七点的索引缓存对象
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO); //首先得绑定顶点数组对象，就是告诉GPU，如果等下你要渲染了，给老子渲染这个数组对象里的东西
+	glBindVertexArray(VAO);      //绑定顶点数组对象
 
-	unsigned int VBO;                     //顶点缓存对象ID
-	glGenBuffers(1, &VBO);                //从GPU中申请一个顶点缓存对象绑定到VBO中
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);   //把VBO绑定在 GL_ARRAY_BUFFER 目标中，以后关于 GL_ARRAY_BUFFER 的操作都会记在VBO头上
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //将实际数据绑定到VBO中 
-	
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0); //告诉GPU，我的顶点属性是0，一个顶点是3个浮点数的大小，不需要归一化，步长就是三个float的步长
-	glEnableVertexAttribArray(0);  //将属性0开启，OpenGL默认禁用所有的顶点属性的
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);  //绑定顶点缓存对象
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //传入需要缓存的数据
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);    //绑定索引缓存
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); //传入索引缓存，GL_STATIC_DRAW说明是不变的数据
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);  //顶点属性为0，一个顶点为3个float的基本类型组成，不需要归一化，大小为3个float的大小
+	glEnableVertexAttribArray(0);  //开启顶点属性为0的顶点渲染，OpenGL默认关掉所有顶点属性
+
+	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+	glBindBuffer(GL_ARRAY_BUFFER, 0);  //注意，类型为GL_ARRAY_BUFFER的时候VAO是不记录的，但是如果是GL_ARRAY_ELEMENT_BUFFER，VAO是记录的，也就是如果你在绑定VAO前解绑了EBO，那很可能你将不能按索引渲染
+
+	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+	glBindVertexArray(0);
 
 	// render loop
 	// -----------
@@ -132,7 +150,7 @@ int main()
 		//绘制三角形
 		glUseProgram(shaderProgram);  //使用我们的着色器，核心模式是不提供的
 		glBindVertexArray(VAO);       //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
