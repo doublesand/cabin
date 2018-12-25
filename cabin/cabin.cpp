@@ -12,15 +12,19 @@ const unsigned int SCR_HEIGHT = 600;   //窗口高度
 
 const char *vertexShaderSource = "#version 330 core\n" //顶点着色器
 "layout (location = 0) in vec3 aPos;\n"
+"layout (location = 1) in vec3 color;\n"
+"out vec3 fragcolor;"
 "void main()\n"
 "{\n"
 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"	fragcolor = color;\n"
 "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"  //片元着色器
+"in  vec3 fragcolor;\n"
 "out vec4 FragColor;\n"
 "void main()\n"
 "{\n"
-"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"   FragColor = vec4(fragcolor, 1.0f);\n"
 "}\n\0";
 
 int main()
@@ -99,40 +103,39 @@ int main()
 
 	float vertices[] = {
 	   0.5f,  0.5f, 0.0f,  // top right
+	   0.5f,  0.5f, 0.0f,  //颜色
 	   0.5f, -0.5f, 0.0f,  // bottom right
+	   0.5f,  0.6f, 0.3f,  //颜色
 	  -0.5f, -0.5f, 0.0f,  // bottom left
-	  -0.5f,  0.5f, 0.0f   // top left 
+	   0.2f,  0.5f, 0.7f,  //颜色 
+	  -0.5f,  0.5f, 0.0f,  // top left 
+	   0.5f,  0.1f, 0.5f   //颜色
 	};
+
 	unsigned int indices[] = {  // note that we start from 0!
 		0, 1, 3,  // first Triangle
 		1, 2, 3   // second Triangle
 	};
 
-	float triangle[] = {
-	   1.0f,  0.5f, 0.0f,
-	   1.0f, -0.5f, 0.0f,
-	  -1.0f, -0.5f, 0.0f,
-	};
-
-	unsigned int tri_index[] = {
-		1, 2, 3
-	};
-
-	unsigned int VBO[2], VAO[2], EBO[2]; 
-	glGenVertexArrays(2, VAO);  //生成一个以VAO的地址为起点的顶点数组对象
-	glGenBuffers(2, VBO);       //生成一个以VBO的地址为起点的顶点缓存对象
-	glGenBuffers(2, EBO);       //生成一个以EBO的地址为七点的索引缓存对象
+	unsigned int VBO, VAO, EBO; 
+	glGenVertexArrays(1, &VAO);  //生成一个顶点数组对象
+	glGenBuffers(1, &VBO);       //生成一个顶点缓存对象
+	glGenBuffers(1, &EBO);       //生成一个索引缓存对象
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO[0]);      //绑定顶点数组对象
+	glBindVertexArray(VAO);      //绑定顶点数组对象
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);  //绑定顶点缓存对象
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);  //绑定顶点缓存对象
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //传入需要缓存的数据
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);    //绑定索引缓存
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);    //绑定索引缓存
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); //传入索引缓存，GL_STATIC_DRAW说明是不变的数据
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);  //顶点属性为0，一个顶点为3个float的基本类型组成，不需要归一化，大小为3个float的大小
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);  //顶点属性为0，一个顶点为3个float的基本类型组成，不需要归一化，大小为3个float的大小
 	glEnableVertexAttribArray(0);  //开启顶点属性为0的顶点渲染，OpenGL默认关掉所有顶点属性
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);  //顶点属性为0，一个顶点为3个float的基本类型组成，不需要归一化，大小为3个float的大小
+	glEnableVertexAttribArray(1);  //开启顶点属性为0的顶点渲染，OpenGL默认关掉所有顶点属性
+
 
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);  //注意，类型为GL_ARRAY_BUFFER的时候VAO是不记录的，但是如果是GL_ARRAY_ELEMENT_BUFFER，VAO是记录的，也就是如果你在绑定VAO前解绑了EBO，那很可能你将不能按索引渲染
@@ -143,16 +146,6 @@ int main()
 	//之后您可以解除VAO的绑定，这样其他VAO调用就不会意外地修改这个VAO，但这很少发生。无论如何，修改其他VAO都需要调用glBindVertexArray，因此在不需要直接绑定VAO（或VBO）时，我们通常不释放VAO
 	glBindVertexArray(0);
 	
-	//绑定三角形顶点数组对象
-	glBindVertexArray(VAO[1]);     
-	glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);  
-	glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW); 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[1]);    
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tri_index), tri_index, GL_STATIC_DRAW); 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0); 
-	glBindBuffer(GL_ARRAY_BUFFER, 0); 
-
 	// render loop
 	// -----------
 	while (!glfwWindowShouldClose(window))  //如果window不应该被关闭，就持续渲染
@@ -168,11 +161,9 @@ int main()
 		
 		//绘制正方形
 		glUseProgram(shaderProgram);  //使用我们的着色器，核心模式是不提供的
-		glBindVertexArray(VAO[0]);       //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
+		glBindVertexArray(VAO);       //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-		glBindVertexArray(VAO[1]);
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);    //交换颜色缓存，以至于渲染速度快到我们看得很流畅，舒服
