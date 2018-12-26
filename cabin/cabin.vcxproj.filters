@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="着色器">
+      <UniqueIdentifier>{2748400a-3045-4050-8148-3ed012e51851}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cabin.cpp">
@@ -26,11 +29,17 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vertex.glsl">
-      <Filter>源文件</Filter>
-    </None>
     <None Include="fragment.glsl">
-      <Filter>源文件</Filter>
+      <Filter>着色器</Filter>
+    </None>
+    <None Include="vertex.glsl">
+      <Filter>着色器</Filter>
+    </None>
+    <None Include="light.vs">
+      <Filter>着色器</Filter>
+    </None>
+    <None Include="light.fs">
+      <Filter>着色器</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -43,5 +52,16 @@
     <ClInclude Include="Camera.h">
       <Filter>头文件</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="textures\awesomeface.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="textures\container.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="textures\wall.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>
