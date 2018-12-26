@@ -85,33 +85,64 @@ int main()
 	glEnableVertexAttribArray(2);
 
 	// load and create a texture 
-	// -------------------------
-	unsigned int texture;  
-	glGenTextures(1, &texture);  //申请一个纹理对象
-	glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-	// 设置视觉效果（4种，边缘方式的话还需要设置边缘颜色），分别为纹理目标、纹理方向（单独设置每个方向，和x、y轴类似）以及环绕方式
+   // -------------------------
+	unsigned int texture1, texture2;
+	// texture 1
+	// ---------
+	glGenTextures(1, &texture1);   //创建纹理1
+	glBindTexture(GL_TEXTURE_2D, texture1); //绑定当前纹理为纹理1
+	// set the texture wrapping parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// 设置纹理过滤方式（邻近过滤和线性过滤），我们使用线性过滤会比较光滑好看，其实就是浮点坐标到像素阵列的转换
+	// set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
-	// 下面参数分别是图片路径、图片宽度、高度以及图片的颜色通道个数
+	stbi_set_flip_vertically_on_load(true); // 实际图片和纹理OpenGL的坐标y轴是反的，这里设置一下就行
+	// The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
 	unsigned char *data = stbi_load("textures/container.jpg", &width, &height, &nrChannels, 0);
-	if (data)  //如果读取到文件，生成一个纹理
+	if (data)
 	{
-		//参数为纹理目标、纹理级别（可以用来渐远设置）、纹理格式（一般都是颜色）、以及读到的宽和高，后面的0没有什么用，接下来是源图的格式和数据类型，最后是图像数据
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		//为当前绑定的纹理自动生成所有需要的多级渐远纹理，远处物体不会失真
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
 	{
 		std::cout << "Failed to load texture" << std::endl;
 	}
-	//生成了纹理和相应的多级渐远纹理后，释放图像的内存是一个很好的习惯。
 	stbi_image_free(data);
+	// texture 2
+	// ---------
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load image, create texture and generate mipmaps
+	data = stbi_load("textures/awesomeface.png", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		// note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	// -------------------------------------------------------------------------------------------
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	// either set it manually like so:
+	glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);  //texture1属性为0，第一个纹理回去找到这个单元渲染
+	// or set it via the texture class
+	shader.setInt("texture2", 1);
 	
 	// render loop
 	// -----------
@@ -126,12 +157,15 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //清除背景的颜色，当要清除的时候用这个颜色清除，这是状态设置函数
 		glClear(GL_COLOR_BUFFER_BIT);         //清除颜色缓存，以后会有深度缓存等等，这是状态使用函数，使用前面的设置
 		
-		//绑定纹理到texture对象中
-		glBindTexture(GL_TEXTURE_2D, texture);
+		 // bind textures on corresponding texture units，渲染前要激活纹理单元
+		glActiveTexture(GL_TEXTURE0); //设置当前激活单元为GL_TEXTURE0
+		glBindTexture(GL_TEXTURE_2D, texture1);  //前面设置了，这个纹理就会绑定到前面的激活单元中
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
 
 		//绘制正方形
 		shader.use();                         //使用我们的着色器，核心模式是不提供的
-		shader.setFloat("xOffset", 0.2);      //灵活使用uniform
+		shader.setFloat("xOffset", 0.2f);      //灵活使用uniform
 		glBindVertexArray(VAO);               //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
