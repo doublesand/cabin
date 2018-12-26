@@ -10,7 +10,7 @@
 #include "Shader.h"      //着色器类，简化创建着色器的过程
 #include <iostream>      
 
-#define ASSERT(x) if (!(x)) __debugbreak(); 
+#define ASSERT(x) if (!(x)) __debugbreak();   //调试代码
 #define GLCall(x) GLClearError();\
 	x;\
 	ASSERT(GLLogCall(#x, __FILE__, __LINE__))
@@ -31,14 +31,11 @@ static bool GLLogCall(const char* function, const char* file, int line) {
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);  //视口设置，检测窗口改变视口也跟着改变
-void processInput(GLFWwindow *window);   
+void processInput(GLFWwindow *window);         
 
 // settings
 const unsigned int SCR_WIDTH = 800;    //窗口宽度
 const unsigned int SCR_HEIGHT = 600;   //窗口高度
-
-// stores how much we're seeing of either texture
-float mixValue = 0.2f;
 
 int main()
 {
@@ -73,44 +70,71 @@ int main()
 		return -1;
 	}
 
+	glEnable(GL_DEPTH_TEST);
+
 	Shader shader("vertex.glsl", "fragment.glsl");
 
-	float vertices[] = {  //顶点一般有坐标、颜色、纹理、法向量，这里已经有三个了，以后继续添加
-		// positions          // colors           // texture coords
-		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
-	};
-	
+	// set up vertex data (and buffer(s)) and configure vertex attributes
+	// ------------------------------------------------------------------
+	float vertices[] = {                       //顶点数组
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-	unsigned int indices[] = {  // note that we start from 0!
-		0, 1, 3,  // first Triangle
-		1, 2, 3   // second Triangle
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	unsigned int VBO, VAO, EBO; 
+	unsigned int VBO, VAO; 
 	glGenVertexArrays(1, &VAO);  //生成一个顶点数组对象
 	glGenBuffers(1, &VBO);       //生成一个顶点缓存对象
-	glGenBuffers(1, &EBO);       //生成一个索引缓存对象
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
 	glBindVertexArray(VAO);      //绑定顶点数组对象
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);  //绑定顶点缓存对象
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //传入需要缓存的数据
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);    //绑定索引缓存
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); //传入索引缓存，GL_STATIC_DRAW说明是不变的数据
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);  //顶点属性为0，一个顶点为3个float的基本类型组成，不需要归一化，大小为3个float的大小
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);  //顶点属性为0，一个顶点为3个float的基本类型组成，不需要归一化，大小为3个float的大小
 	glEnableVertexAttribArray(0);  //开启顶点属性为0的顶点渲染，OpenGL默认关掉所有顶点属性
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);  //颜色属性为1，颜色为3个float的基本类型组成，不需要归一化，大小为3个float的大小
-	glEnableVertexAttribArray(1);  //开启顶点颜色属性为1的顶点渲染，OpenGL默认关掉所有顶点属性
-
 	// texture coord attribute ，纹理属性设置为2
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); //纹理坐标为2个float
-	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); //纹理坐标为2个float
+	glEnableVertexAttribArray(1);
 
 	// load and create a texture 
    // -------------------------
@@ -167,9 +191,7 @@ int main()
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
 	// -------------------------------------------------------------------------------------------
 	shader.use(); // don't forget to activate/use the shader before setting uniforms!
-	// either set it manually like so:
-	glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);  //texture1属性为0，第一个纹理回去找到这个单元渲染
-	// or set it via the texture class
+	shader.setInt("texture2", 0);
 	shader.setInt("texture2", 1);
 	
 	// render loop
@@ -183,7 +205,7 @@ int main()
 		// render
 		// ------
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //清除背景的颜色，当要清除的时候用这个颜色清除，这是状态设置函数
-		glClear(GL_COLOR_BUFFER_BIT);         //清除颜色缓存，以后会有深度缓存等等，这是状态使用函数，使用前面的设置
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         //清除颜色缓存，以后会有深度缓存等等，这是状态使用函数，使用前面的设置
 		
 		 // bind textures on corresponding texture units，渲染前要激活纹理单元
 		glActiveTexture(GL_TEXTURE0); //设置当前激活单元为GL_TEXTURE0
@@ -195,11 +217,16 @@ int main()
 		shader.use();
 
 		// create transformations
-		glm::mat4 model(1.0f);
-		glm::mat4 view(1.0f);
-		glm::mat4 projection(1.0f);
-		model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		glm::mat4 model(1.0f);            //模型矩阵
+		glm::mat4 view(1.0f);             //观察矩阵
+		glm::mat4 projection(1.0f);       //透视矩阵
+		//该函数是modol绕一个轴旋转的角度为glfwGetTime()，glm::radians可以将角度转化为弧度
+		model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));   
+		//给每个分量缩放的比例
+		model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
+		//物体向Z轴的负方向移动，以至于我们可以看见
 		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+		//函数参数分别是视野，通常是45.0f，第二个参数是宽高比，由视口的宽除以高所得。第三个和第四个设置了平截头体的近和远平面，通常设置近距离为0.1f,远距离为100.0f
 		projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		// retrieve the matrix uniform locations
 		unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
@@ -209,17 +236,22 @@ int main()
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
 		// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
 		shader.setMat4("projection", projection);
-		shader.setFloat("mixValue", mixValue);
+
 
 		//绘制正方形
 		glBindVertexArray(VAO);               //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);    //交换颜色缓存，以至于渲染速度快到我们看得很流畅，舒服
 		glfwPollEvents();     //监听是否触发事件（键盘输入、鼠标移动）、更新窗口等，并执行相应的回调函数
 	}
+
+	// optional: de-allocate all resources once they've outlived their purpose:
+   // ------------------------------------------------------------------------
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
@@ -233,19 +265,6 @@ void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) //每次循环的开始前检查一次GLFW是否被要求退出，按Esc键
 		glfwSetWindowShouldClose(window, true);
-
-	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-	{
-		mixValue += 0.001f; // change this value accordingly (might be too slow or too fast based on system hardware)
-		if (mixValue >= 1.0f)
-			mixValue = 1.0f;
-	}
-	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-	{
-		mixValue -= 0.001f; // change this value accordingly (might be too slow or too fast based on system hardware)
-		if (mixValue <= 0.0f)
-			mixValue = 0.0f;
-	}
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
