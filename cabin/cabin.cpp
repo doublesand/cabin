@@ -28,6 +28,10 @@ static bool GLLogCall(const char* function, const char* file, int line) {
 	return true;
 }
 
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);  //视口设置，检测窗口改变视口也跟着改变
@@ -208,6 +212,11 @@ int main()
 	shader.setInt("texture2", 0);
 	shader.setInt("texture2", 1);
 	
+	// pass projection matrix to shader (as projection matrix rarely changes there's no need to do this per frame)
+	// -----------------------------------------------------------------------------------------------------------
+	glm::mat4 projection = glm::perspective(glm::radians(65.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	shader.setMat4("projection", projection);
+
 	// render loop
 	// -----------
 	while (!glfwWindowShouldClose(window))  //如果window不应该被关闭，就持续渲染
@@ -219,7 +228,7 @@ int main()
 		// render
 		// ------
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //清除背景的颜色，当要清除的时候用这个颜色清除，这是状态设置函数
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         //清除颜色缓存，以后会有深度缓存等等，这是状态使用函数，使用前面的设置
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         //清除颜色缓存，深度缓存等等，这是状态使用函数，使用前面的设置，如果不清除会留在下一帧画面中
 		
 		 // bind textures on corresponding texture units，渲染前要激活纹理单元
 		glActiveTexture(GL_TEXTURE0); //设置当前激活单元为GL_TEXTURE0
@@ -230,19 +239,12 @@ int main()
 		// activate shader
 		shader.use();
 
-		// create transformations
+		// camera/view transformation
 		glm::mat4 view(1.0f);
-		glm::mat4 projection(1.0f);
-		//透视投影的箱体都会对应到裁剪空间的每一个点，可以通过修改视野和观察点来切换不同的场景
-		projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-		// pass transformation matrices to the shader
-		shader.setMat4("projection", projection); // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		shader.setMat4("view", view);
 
 		// render boxes
-		glBindVertexArray(VAO);
-
 		glBindVertexArray(VAO);
 		for (unsigned int i = 0; i < 10; i++)
 		{
@@ -250,8 +252,6 @@ int main()
 			glm::mat4 model(1.0f);
 			model = glm::translate(model, cubePositions[i]);
 			float angle = 20.0f * i;
-			if (i % 3 == 0)  // every 3rd iteration (including the first) we set the angle using GLFW's time function.
-				angle = glfwGetTime() * 25.0f;
 			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 			shader.setMat4("model", model);
 
@@ -282,6 +282,15 @@ void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) //每次循环的开始前检查一次GLFW是否被要求退出，按Esc键
 		glfwSetWindowShouldClose(window, true);
+	float cameraSpeed = 0.05f; // adjust accordingly
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
