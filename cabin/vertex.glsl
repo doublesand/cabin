@@ -11,5 +11,5 @@ uniform mat4 projection;  //投影矩阵
 void main()
 {
 	gl_Position = projection * view * model * vec4(aPos, 1.0f);    //模视矩阵到透视矩阵
-	TexCoord = vec2(aTexCoord.x, aTexCoord.y);                     //传纹理到
+	TexCoord = vec2(aTexCoord.x, aTexCoord.y);                     //传纹理到片元着色器
 }

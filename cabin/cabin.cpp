@@ -120,6 +120,20 @@ int main()
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
+	// world space positions of our cubes
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	unsigned int VBO, VAO; 
 	glGenVertexArrays(1, &VAO);  //生成一个顶点数组对象
 	glGenBuffers(1, &VBO);       //生成一个顶点缓存对象
@@ -217,30 +231,28 @@ int main()
 		shader.use();
 
 		// create transformations
-		glm::mat4 model(1.0f);            //模型矩阵
-		glm::mat4 view(1.0f);             //观察矩阵
-		glm::mat4 projection(1.0f);       //透视矩阵
-		//该函数是modol绕一个轴旋转的角度为glfwGetTime()，glm::radians可以将角度转化为弧度
-		model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));   
-		//给每个分量缩放的比例
-		model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
-		//物体向Z轴的负方向移动，以至于我们可以看见
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-		//函数参数分别是视野，通常是45.0f，第二个参数是宽高比，由视口的宽除以高所得。第三个和第四个设置了平截头体的近和远平面，通常设置近距离为0.1f,远距离为100.0f
+		glm::mat4 view(1.0f);
+		glm::mat4 projection(1.0f);
+		//透视投影的箱体都会对应到裁剪空间的每一个点，可以通过修改视野和观察点来切换不同的场景
 		projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-		// retrieve the matrix uniform locations
-		unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
-		unsigned int viewLoc = glGetUniformLocation(shader.ID, "view");
-		// pass them to the shaders (3 different ways)
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
-		// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
-		shader.setMat4("projection", projection);
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+		// pass transformation matrices to the shader
+		shader.setMat4("projection", projection); // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+		shader.setMat4("view", view);
 
+		// render boxes
+		glBindVertexArray(VAO);
+		for (unsigned int i = 0; i < 10; i++)
+		{
+			// calculate the model matrix for each object and pass it to shader before drawing
+			glm::mat4 model(1.0f);
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			shader.setMat4("model", model);
 
-		//绘制正方形
-		glBindVertexArray(VAO);               //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
