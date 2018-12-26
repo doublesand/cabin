@@ -1,5 +1,6 @@
 #include <glad/glad.h>   //管理函数指针OpenGL的函数指针。OpenGL只是一个标准/规范，具体的实现是由驱动开发商针对特定显卡实现的。由于OpenGL驱动版本众多，它大多数函数的位置都无法在编译时确定下来，需要在运行时查询。
 #include <GLFW/glfw3.h>  //创建OpenGL上下文，定义窗口参数以及处理用户输入
+#include "Shader.h"
 
 #include <iostream>      
 
@@ -9,23 +10,6 @@ void processInput(GLFWwindow *window);
 // settings
 const unsigned int SCR_WIDTH = 800;    //窗口宽度
 const unsigned int SCR_HEIGHT = 600;   //窗口高度
-
-const char *vertexShaderSource = "#version 330 core\n" //顶点着色器
-"layout (location = 0) in vec3 aPos;\n"
-"layout (location = 1) in vec3 color;\n"
-"out vec3 fragcolor;"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"	fragcolor = color;\n"
-"}\0";
-const char *fragmentShaderSource = "#version 330 core\n"  //片元着色器
-"in  vec3 fragcolor;\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"   FragColor = vec4(fragcolor, 1.0f);\n"
-"}\n\0";
 
 int main()
 {
@@ -60,46 +44,7 @@ int main()
 		return -1;
 	}
 
-	//初始化顶点着色器
-	int vertexShader = glCreateShader(GL_VERTEX_SHADER);            //创建顶点着色器
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);     //传入源码
-	glCompileShader(vertexShader);                                  //编译顶点着色器
-	//检查顶点着色器编译是否成功
-	int success;                     //标记位
-	char infoLog[512];               //异常记录
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);  //传出错误标记位
-	if (!success)
-	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-	// 片元着色器
-	int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);  //创建片元着色器
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL); //传入片元着色器源码
-	glCompileShader(fragmentShader);                              //编译片元着色器
-	// 检查是否编译有误
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-	// 链接着色器
-	int shaderProgram = glCreateProgram();             //创建小程序
-	glAttachShader(shaderProgram, vertexShader);       //链接顶点着色器
-	glAttachShader(shaderProgram, fragmentShader);     //链接片元着色器
-	glLinkProgram(shaderProgram);                      //链接小程序
-	// 检查链接是否有误
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-	}
-
-	glDeleteShader(vertexShader);   //链接后顶点着色器源码可以删了
-	glDeleteShader(fragmentShader); //链接后片元着色器源码可以删了
+	Shader shader("vertex.glsl", "fragment.glsl");
 
 	float vertices[] = {
 	   0.5f,  0.5f, 0.0f,  // top right
@@ -160,8 +105,9 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);         //清除颜色缓存，以后会有深度缓存等等，这是状态使用函数，使用前面的设置
 		
 		//绘制正方形
-		glUseProgram(shaderProgram);  //使用我们的着色器，核心模式是不提供的
-		glBindVertexArray(VAO);       //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
+		shader.use();                         //使用我们的着色器，核心模式是不提供的
+		shader.setFloat("xOffset", 0.2);      //灵活使用uniform
+		glBindVertexArray(VAO);               //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
