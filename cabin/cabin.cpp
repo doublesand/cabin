@@ -1,9 +1,15 @@
 #include <glad/glad.h>   //管理函数指针OpenGL的函数指针。OpenGL只是一个标准/规范，具体的实现是由驱动开发商针对特定显卡实现的。由于OpenGL驱动版本众多，它大多数函数的位置都无法在编译时确定下来，需要在运行时查询。
 #include <GLFW/glfw3.h>  //创建OpenGL上下文，定义窗口参数以及处理用户输入
-#include "Shader.h"      //着色器类，简化创建着色器的过程
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "stb_image.h"   //纹理所需，将图片转成OpenGL可以读取的格式
 
+#include "Shader.h"      //着色器类，简化创建着色器的过程
 #include <iostream>      
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);  //视口设置，检测窗口改变视口也跟着改变
 void processInput(GLFWwindow *window);   
@@ -166,12 +172,18 @@ int main()
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
+		// create transformations
+		glm::mat4 transform = glm::mat4(1.0f);
+		transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+		transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+
 		// set the texture mix value in the shader
+		shader.use();                         //使用我们的着色器，核心模式是不提供的
 		shader.setFloat("mixValue", mixValue);
+		unsigned int transformLoc = glGetUniformLocation(shader.ID, "transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
 		//绘制正方形
-		shader.use();                         //使用我们的着色器，核心模式是不提供的
-		shader.setFloat("xOffset", 0.2f);      //灵活使用uniform
 		glBindVertexArray(VAO);               //使用VAO顶点数组对象，这里只有一个，如果有多个，每次只能绑定一个
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
