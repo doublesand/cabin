@@ -49,9 +49,6 @@ bool firstMouse = true;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-//光源
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-
 int main()
 {
 	// glfw: initialize and configure
@@ -185,7 +182,7 @@ int main()
 	glEnableVertexAttribArray(0);
 
 	unsigned int diffuseMap = loadTexture("textures/container2.png");
-	unsigned int specularMap = loadTexture("textures/lighting_maps_specular_color.png");
+	unsigned int specularMap = loadTexture("textures/container2_specular.png");
 
 	lightingShader.use();
 	lightingShader.setInt("material.diffuse", 0);  //设置diffuse的纹理属性为0
@@ -212,17 +209,23 @@ int main()
 
 		// be sure to activate shader when setting uniforms/drawing objects
 		lightingShader.use();
-		lightingShader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+		lightingShader.setVec3("light.position", camera.Position);
+		lightingShader.setVec3("light.direction", camera.Front);
+		lightingShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
 		lightingShader.setVec3("viewPos", camera.Position);
 
 		// light properties
-		lightingShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-		lightingShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+		lightingShader.setVec3("light.ambient", 0.1f, 0.1f, 0.1f);
+		// we configure the diffuse intensity slightly higher; the right lighting conditions differ with each lighting method and environment.
+		// each environment and lighting type requires some tweaking to get the best out of your environment.
+		lightingShader.setVec3("light.diffuse", 0.8f, 0.8f, 0.8f);
 		lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 		lightingShader.setFloat("light.constant", 1.0f);
 		lightingShader.setFloat("light.linear", 0.09f);
 		lightingShader.setFloat("light.quadratic", 0.032f);
 
+		// material properties
+		lightingShader.setFloat("material.shininess", 32.0f);
 
 		// material properties
 		lightingShader.setFloat("material.shininess", 32.0f);
@@ -232,6 +235,7 @@ int main()
 		glm::mat4 view = camera.GetViewMatrix();
 		lightingShader.setMat4("projection", projection);
 		lightingShader.setMat4("view", view);
+
 		
 		// world transformation
 		glm::mat4 model(1.0f);
@@ -258,7 +262,7 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
-		// also draw the lamp object
+		/* also draw the lamp object
 		lampShader.use();
 		lampShader.setMat4("projection", projection);
 		lampShader.setMat4("view", view);
@@ -268,7 +272,7 @@ int main()
 		lampShader.setMat4("model", model);
 
 		glBindVertexArray(lightVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, 36);*/
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
