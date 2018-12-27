@@ -172,10 +172,12 @@ int main()
 
 	unsigned int diffuseMap = loadTexture("textures/container2.png");
 	unsigned int specularMap = loadTexture("textures/lighting_maps_specular_color.png");
+	unsigned int emissionMap = loadTexture("textures/matrix.jpg");
 
 	lightingShader.use();
-	lightingShader.setInt("material.diffuse", 0);
-	lightingShader.setInt("material.specular", 1);
+	lightingShader.setInt("material.diffuse", 0);  //设置diffuse的纹理属性为0
+	lightingShader.setInt("material.specular", 1); //设置specular的纹理属性为1
+	lightingShader.setInt("material.emission", 2);
 
 	// render loop
 	// -----------
@@ -225,6 +227,9 @@ int main()
 		// bind specular map
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, specularMap);
+		// bind emission map
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, emissionMap);
 
 		// render the cube
 		glBindVertexArray(cubeVAO);
