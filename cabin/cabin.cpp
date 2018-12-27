@@ -212,6 +212,7 @@ int main()
 		lightingShader.setVec3("light.position", camera.Position);
 		lightingShader.setVec3("light.direction", camera.Front);
 		lightingShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+		lightingShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
 		lightingShader.setVec3("viewPos", camera.Position);
 
 		// light properties
@@ -223,9 +224,6 @@ int main()
 		lightingShader.setFloat("light.constant", 1.0f);
 		lightingShader.setFloat("light.linear", 0.09f);
 		lightingShader.setFloat("light.quadratic", 0.032f);
-
-		// material properties
-		lightingShader.setFloat("material.shininess", 32.0f);
 
 		// material properties
 		lightingShader.setFloat("material.shininess", 32.0f);
