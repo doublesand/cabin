@@ -12,7 +12,8 @@ uniform mat4 projection;
 void main()
 {
     FragPos = vec3(model * vec4(aPos, 1.0));
-    Normal = aNormal;  
+	//法向量变换矩阵应该在CPU上处理，这里为了方便，搭建框架时注意
+    Normal = mat3(transpose(inverse(view * model))) * aNormal; 
     
     gl_Position = projection * view * vec4(FragPos, 1.0);
 }
