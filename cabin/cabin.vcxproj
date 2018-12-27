@@ -130,10 +130,10 @@
     <ClCompile Include="stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="fragment.glsl" />
+    <None Include="lamp.fs" />
     <None Include="light.fs" />
     <None Include="light.vs" />
-    <None Include="vertex.glsl" />
+    <None Include="lamp.vs" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />

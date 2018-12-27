@@ -29,16 +29,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="fragment.glsl">
-      <Filter>着色器</Filter>
-    </None>
-    <None Include="vertex.glsl">
-      <Filter>着色器</Filter>
-    </None>
     <None Include="light.vs">
       <Filter>着色器</Filter>
     </None>
     <None Include="light.fs">
+      <Filter>着色器</Filter>
+    </None>
+    <None Include="lamp.vs">
+      <Filter>着色器</Filter>
+    </None>
+    <None Include="lamp.fs">
       <Filter>着色器</Filter>
     </None>
   </ItemGroup>
