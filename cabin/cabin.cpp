@@ -1,8 +1,8 @@
-#include <glad/glad.h>
+#include <glad/glad.h>  
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>  
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Shader.h"
@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height); //函数声明
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
@@ -57,7 +57,7 @@ int main()
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
-	// tell GLFW to capture our mouse
+	// tell GLFW to capture our mouse  捕捉鼠标
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// glad: load all OpenGL function pointers
@@ -76,12 +76,12 @@ int main()
 	// -------------------------
 	Shader ourShader("model.vs", "model.fs");
 
-	// load models
+	// load models 利用模型类导入模型
 	// -----------
 	Model ourModel("objects/nanosuit/nanosuit.obj");
 
 
-	// draw in wireframe
+	// 下面语句利用线来画
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// render loop
@@ -112,12 +112,12 @@ int main()
 		ourShader.setMat4("projection", projection);
 		ourShader.setMat4("view", view);
 
-		// render the loaded model
-		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
-		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
-		ourShader.setMat4("model", model);
-		ourModel.Draw(ourShader);
+		// 渲染下载的模型
+		glm::mat4 model(1.0f);    
+		model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // 往Y轴负方向平移才能看见
+		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// 模型很大，将其缩小以至于我们能看见
+		ourShader.setMat4("model", model);  //将模型矩阵传入着色器
+		ourModel.Draw(ourShader);           //给我们的模型传入着色器进行着色
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
